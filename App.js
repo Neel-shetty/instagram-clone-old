@@ -1,20 +1,103 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+//import AsyncStorage from '@react-native-community/async-storage';
+import React, {Component} from 'react';
+import { View, Text } from 'react-native';
+import * as firebase from 'firebase'
+import { Provider } from 'react-redux';
+import { configureStore, applyMiddleware} from 'redux'
+import rootReducer from './redux/reducers'
+import thunk from 'redux-thunk'
+const store = createStore(rootReducer, applyMiddleware(thunk))
+const firebaseConfig = {
+  apiKey: "AIzaSyAcuWTia-h-68i8EoreJcwDRWddJxdbXbs",
+  authDomain: "instagram-52967.firebaseapp.com",
+  projectId: "instagram-52967",
+  storageBucket: "instagram-52967.appspot.com",
+  messagingSenderId: "436218993834",
+  appId: "1:436218993834:web:078621b77d6f15a9bdc4d3",
+  measurementId: "G-WZTGDW07VZ"
+};
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+if(firebase.apps.length === 0){
+  firebase.initializeApp(firebaseConfig)
 }
 
-const styles = StyleSheet.create({
+//import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import LandingScreen from './components/auth/Landing';
+import RegisterScreen from './components/auth/Register';
+import MainScreen from './components/Main'
+
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
+
+const Stack = createStackNavigator();
+
+export class App extends Component {
+  constructor(props){
+    super(props)
+    this.state = {
+      loaded: false,
+    }
+  }
+
+  componentDidMount(){
+    firebase.auth().onAuthStateChanged((user) => {
+      if(!user){
+        this.setState({
+          loggedIn: false,
+          loaded: true,
+        })
+      }else {
+        this.setState({
+          loggedIn: true,
+          loaded: true,
+        })
+      }
+      
+    })
+  }
+
+  render() {
+    const {loggedIn, loaded} = this.state
+    if(!loaded){
+      return(
+        <View style={{flex:1, justifyContent: 'center'}}>
+          <Text>Loading</Text>
+        </View>
+      )
+    }
+    
+    if(!loggedIn){
+      return (
+        <NavigationContainer>
+          <Stack.Navigator initialRouteName="Landing">
+            <Stack.Screen name="Landing" component={LandingScreen} options={{headerShown: false}}/>
+            <Stack.Screen name="Register" component={RegisterScreen}/>
+          </Stack.Navigator>
+        </NavigationContainer>
+      );
+    }
+
+    return(
+      <Provider store={store}>
+        <MainScreen/>
+      </Provider>
+      
+    )
+    
+  }
+}
+
+export default App
+
+
+/*const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}); */
